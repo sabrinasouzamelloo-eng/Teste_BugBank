@@ -1,0 +1,291 @@
+MAPEAMENTO BUGBANK - CAMINHO DO TESTE
+URL: https://bugbank.netlify.app/
+Localizador: XPath
+=====================================================================
+
+OBSERVACOES
+- Login e registro estao no mesmo HTML e repetem name="email" e
+  name="password". Por isso os XPaths sao escopados pelo container
+  (card__login ou card__register).
+- Nao usar classes geradas (ex.: gQAEIG, kOeYBn): mudam a cada build.
+- Os dados ficam em memoria local. Recarregar a pagina apaga as contas.
+- Legenda:  [OK] = verificado no HTML   [PENDENTE] = falta mapear (nenhum item pendente no momento)
+
+
+=====================================================================
+PASSO 1 - Acessar a pagina
+=====================================================================
+Abrir: https://bugbank.netlify.app/
+
+
+=====================================================================
+PASSO 2 - Ir para o registro (tela inicial, area de LOGIN)
+=====================================================================
+[OK] Botao Registrar
+  //div[@class="card__login"]//div[@class="login__buttons"]/button[@type="button"]
+  (alternativa: //div[@class="card__login"]//button[text()="Registrar"])
+
+
+=====================================================================
+PASSO 3 - Cadastrar a CONTA 1 com saldo (tela inicial, area de REGISTRO)
+=====================================================================
+[OK] Registrar e-mail
+  //div[@class="card__register"]//input[@name="email"]
+
+[OK] Inserir nome
+  //div[@class="card__register"]//input[@name="name"]
+
+[OK] Inserir senha
+  //div[@class="card__register"]//input[@name="password"]
+
+[OK] Confirmar senha
+  //input[@name="passwordConfirmation"]
+
+[OK] Botao "Criar conta com saldo"
+  //label[@id="toggleAddBalance"]
+  (se der ElementClickInterceptedException, clicar no span irmao:
+   //label[@id="toggleAddBalance"]/following-sibling::span)
+
+[OK] Botao Cadastrar
+  //button[text()="Cadastrar"]
+
+
+=====================================================================
+PASSO 4 - Capturar o numero da conta (MODAL pos-cadastro)
+=====================================================================
+[OK] Texto do modal  (CAPTURAR + VALIDAR)
+  //p[@id="modalText"]
+  Exemplo real: "A conta 198-9 foi criada com sucesso"
+  - Validar: o texto contem "foi criada com sucesso"
+  - Capturar: extrair numero e digito com regex (\d+)-(\d+)
+    -> numero = 198, digito = 9
+
+[OK] Botao Fechar  (CLICAR)
+  //a[@id="btnCloseModal"]
+
+[OK] Botao "x" de fechar (alternativa)  (CLICAR)
+  //a[text()="x"]
+
+OBSERVACOES DO MODAL
+- Ler o texto ANTES de fechar o modal (depois de fechado ele some).
+- Usar espera explicita ate o #modalText ficar visivel.
+- O "Fechar" e um <a> sem href, nao um <button>. Por isso o XPath
+  usa a tag "a".
+- O modal nao tem id no container (so classes geradas). Os ids
+  modalText e btnCloseModal bastam.
+
+IMPORTANTE: guardar o numero da conta e o digito da CONTA 1 e da
+CONTA 2 em variaveis separadas. A transferencia usa os dados da
+conta de DESTINO.
+
+
+=====================================================================
+PASSO 5 - Cadastrar a CONTA 2 com saldo
+=====================================================================
+Repetir PASSO 3 e PASSO 4 com outro e-mail e outro nome.
+(Verificar se, depois de fechar o modal, a tela continua no registro
+ ou volta para o login. Se continuar no registro, nao precisa clicar
+ em Registrar de novo.)
+
+[OK] Botao Voltar ao login (se precisar)
+  //a[@id="btnBackButton"]
+
+
+=====================================================================
+PASSO 6 - Fazer login na CONTA 1 (tela inicial, area de LOGIN)
+=====================================================================
+[OK] E-mail
+  //div[@class="card__login"]//input[@name="email"]
+
+[OK] Senha
+  //div[@class="card__login"]//input[@name="password"]
+
+[OK] Botao Acessar
+  //div[@class="card__login"]//button[text()="Acessar"]
+
+Extras (opcionais):
+[OK] Mostrar/ocultar senha
+  //div[@class="card__login"]//button[@class="login__eye"]
+[OK] Erro do e-mail
+  //div[@class="card__login"]//input[@name="email"]/following-sibling::p
+[OK] Erro da senha
+  //div[@class="card__login"]//input[@name="password"]/following-sibling::p
+
+
+=====================================================================
+PASSO 7 - Home (apos login)   URL: /home
+=====================================================================
+[OK] Nome do usuario  (VALIDAR que o login deu certo)
+  //p[@id="textName"]
+  Exemplo real: "Olá Origem,"
+
+[OK] Numero da conta  (CAPTURAR - plano B / validacao extra)
+  //p[@id="textAccountNumber"]/span
+  Exemplo real: "198-9"  (mesmo valor que aparece no modal do cadastro)
+
+[OK] Saldo em conta  (CAPTURAR)
+  //p[@id="textBalance"]/span
+  Exemplo real: "R$ 1.000,00"  (conta criada com saldo = R$ 1.000,00)
+
+[OK] Botao TRANSFERENCIA  (CLICAR)
+  //a[starts-with(@id,"btn-TRANSFER")]
+  (id real: btn-TRANSFERÊNCIA, com acento. O starts-with evita
+   problema de encoding)
+
+[OK] Botao EXTRATO  (CLICAR)
+  //a[@id="btn-EXTRATO"]
+
+[OK] Botao Sair  (CLICAR)
+  //a[@id="btnExit"]
+
+Nao usados na prova (mapeados so por completude):
+  Botao PAGAMENTOS   //a[@id="btn-PAGAMENTOS"]
+  Botao SAQUE        //a[@id="btn-SAQUE"]
+
+OBSERVACOES DA HOME
+- Os botoes sao <a> sem href (nao sao <button>), com icone dentro.
+- O saldo vem com espaco nao separavel (&nbsp;) entre "R$" e o valor.
+  Para converter em numero, remover tudo que nao for digito ou virgula:
+    texto.replaceAll("[^0-9,]", "").replace(",", ".")
+  "R$ 1.000,00" -> "1000.00"
+- A pagina faz redirecionamento para "/" se nao houver o cookie
+  bugbank-auth. Ou seja: nao da para abrir /home direto pela URL, e
+  preciso fazer login antes.
+- Mesmo o nome sendo dinamico, validar com "contains" usando o nome
+  cadastrado no teste (ex.: contem "Origem").
+
+
+=====================================================================
+PASSO 8 - Transferir qualquer valor para a CONTA 2   URL: /transfer
+=====================================================================
+[OK] Entrar na tela: clicar em TRANSFERENCIA (ver Passo 7)
+
+[OK] Texto da tela  (VALIDAR que esta na tela de transferencia)
+  //p[contains(text(),"Realize transferência")]
+
+[OK] Campo numero da conta  (DIGITAR - numero da CONTA 2)
+  //input[@name="accountNumber"]
+
+[OK] Campo digito  (DIGITAR - digito da CONTA 2)
+  //input[@name="digit"]
+
+[OK] Campo valor da transferencia  (DIGITAR)
+  //input[@name="transferValue"]
+
+[OK] Campo descricao  (DIGITAR)
+  //input[@name="description"]
+
+[OK] Botao Transferir agora  (CLICAR)
+  //button[text()="Transferir agora"]
+
+[OK] Botao Voltar  (CLICAR)
+  //a[@id="btnBack"]
+
+[OK] Botao Sair  (CLICAR)
+  //a[@id="btnExit"]
+
+Extras (opcionais) - mensagens de erro de cada campo:
+  //input[@name="accountNumber"]/following-sibling::p
+  //input[@name="digit"]/following-sibling::p
+  //input[@name="transferValue"]/following-sibling::p
+  //input[@name="description"]/following-sibling::p
+
+[OK] Modal de sucesso - texto  (VALIDAR)
+  //p[@id="modalText"]
+  Exemplo real: "Transferencia realizada com sucesso"  (sem acento)
+  - Validar com contains "realizada com sucesso" (evita problema com
+    a falta de acento em "Transferencia")
+
+[OK] Modal - botao Fechar  (CLICAR)
+  //a[@id="btnCloseModal"]
+
+[OK] Modal - botao "x"  (CLICAR, alternativa)
+  //a[text()="x"]
+
+(O modal da transferencia usa os MESMOS ids do modal do cadastro:
+ modalText e btnCloseModal. Reaproveitar o mesmo mapeamento no codigo.)
+
+OBSERVACOES DA TRANSFERENCIA
+- Todos os inputs tem name unico nesta pagina, entao nao precisa de
+  escopo por container.
+- NAO usar @type nos inputs: os types sao invalidos (accountNumber,
+  digit, transferValue, description) e o navegador trata como text.
+  Usar sempre @name.
+- Os botoes Voltar e Sair sao <a> sem href (igual na home).
+- Digitar o numero da conta e o digito em campos separados: usar os
+  grupos extraidos do regex do Passo 4 (ex.: 198 e 9).
+- Anotar se o valor aceita decimal (ex.: 100,50) ou so inteiro, e se
+  a descricao e obrigatoria.
+
+
+=====================================================================
+PASSO 9 - Validar o saldo no EXTRATO da CONTA 1 (origem)   Tela: extrato
+=====================================================================
+[OK] Entrar na tela: clicar em EXTRATO (ver Passo 7)
+
+[OK] Saldo disponivel  (CAPTURAR + VALIDAR)
+  //p[@id="textBalanceAvailable"]
+  Exemplo real: "R$ 1.000,00"
+
+Linha de transacao (cada lancamento do extrato tem estes 4 campos):
+[OK] Data       //p[@id="textDateTransaction"]    ex.: "05/11/2026"
+[OK] Tipo       //p[@id="textTypeTransaction"]    ex.: "Abertura de conta"
+[OK] Descricao  //p[@id="textDescription"]        ex.: "Saldo adicionado ao abrir conta"
+[OK] Valor      //p[@id="textTransferValue"]      ex.: "R$ 1.000,00"
+     (o <p> do valor tem o atributo type com o tipo da transacao,
+      ex.: type="Abertura de conta")
+
+[OK] Botao Voltar  (CLICAR)   //a[@id="btnBack"]
+[OK] Botao Sair    (CLICAR)   //a[@id="btnExit"]
+
+COMO ACHAR A LINHA DA TRANSFERENCIA (importante)
+Os ids se REPETEM em cada lancamento. Com a transferencia, o extrato
+passa a ter 2 linhas (abertura de conta + transferencia), entao
+//p[@id="textTransferValue"] retorna 2 elementos.
+Solucao: filtrar pela descricao digitada na transferencia (Passo 8):
+
+  Valor da linha da transferencia:
+  //p[@id="textDescription" and text()="DESCRICAO_DIGITADA"]/following-sibling::p[@id="textTransferValue"]
+
+  Tipo da linha da transferencia:
+  //p[@id="textDescription" and text()="DESCRICAO_DIGITADA"]/parent::div/preceding-sibling::div//p[@id="textTypeTransaction"]
+  (conferir no navegador com $x(...); se complicar, usar so a de cima)
+
+Assim o teste nao depende da ordem das linhas (nao sei se a mais
+nova aparece primeiro ou por ultimo).
+
+VALIDACOES
+- Origem:  saldo disponivel = 1000,00 - valor transferido
+- A linha da transferencia aparece com a descricao e o valor corretos
+- (Opcional) data no formato dd/MM/yyyy, igual a data de hoje
+
+OBSERVACOES DO EXTRATO
+- O valor vem com &nbsp; entre "R$" e o numero (igual na home). Usar
+  a mesma conversao: remover o que nao for digito ou virgula.
+- [A CONFERIR NO NAVEGADOR] como a transferencia aparece na origem
+  (valor negativo? tipo "Transferencia"?). Anotar o texto exato.
+
+
+=====================================================================
+PASSO 10 - Sair da CONTA 1 e entrar na CONTA 2 (destino)
+=====================================================================
+[OK] Botao Sair (ver Passo 7)
+Depois: repetir PASSO 6 com e-mail e senha da CONTA 2.
+
+
+=====================================================================
+PASSO 11 - Validar o valor recebido no EXTRATO da CONTA 2
+=====================================================================
+[OK] Mesmos elementos do PASSO 9 (a tela e a mesma)
+
+Validacoes:
+- Destino: saldo disponivel = 1000,00 + valor recebido
+- A linha da transferencia aparece (filtrar pela mesma descricao)
+- [A CONFERIR NO NAVEGADOR] como a entrada aparece na conta destino
+  (tipo e sinal do valor)
+
+
+=====================================================================
+PASSO 12 - Entrega
+=====================================================================
+Subir o projeto no GitHub e enviar o link do repositorio.

@@ -1,0 +1,198 @@
+MAPEAMENTO BUGBANK - CAMINHO DO TESTE
+URL: https://bugbank.netlify.app/
+Localizador: XPath
+
+
+
+
+=====================================================================
+PASSO 1 - Acessar a pagina
+=====================================================================
+Abrir: https://bugbank.netlify.app/
+
+=====================================================================
+PASSO 2 - Ir para o registro (tela inicial, area de LOGIN)
+=====================================================================
+[OK] Botao Registrar
+  //div[@class="card__login"]//div[@class="login__buttons"]/button[@type="button"]
+  (alternativa: //div[@class="card__login"]//button[text()="Registrar"])
+
+
+=====================================================================
+PASSO 3 - Cadastrar a CONTA 1 com saldo
+=====================================================================
+ Registrar e-mail
+  //div[@class="card__register"]//input[@name="email"]
+
+ Inserir nome
+  //div[@class="card__register"]//input[@name="name"]
+
+ Inserir senha
+  //div[@class="card__register"]//input[@name="password"]
+
+ Confirmar senha
+  //input[@name="passwordConfirmation"]
+
+ Botao "Criar conta com saldo"
+  
+   //label[@id="toggleAddBalance"]/following-sibling::span)
+
+ Botao Cadastrar
+  //button[text()="Cadastrar"]
+
+
+=====================================================================
+PASSO 4 - Capturar o numero da conta na MODAL
+=====================================================================
+ Texto do modal  
+  //p[@id="modalText"]
+
+ Botao Fechar  (CLICAR)
+  //a[@id="btnCloseModal"]
+
+=====================================================================
+PASSO 5 - Cadastrar a CONTA 2 com saldo
+=====================================================================
+Repetir PASSO 3 e PASSO 4 com outro e-mail e outro nome.
+(Verificar se, depois de fechar o modal, a tela continua no registro
+ ou volta para o login. 
+
+ Botao Voltar ao login (se precisar)
+  //a[@id="btnBackButton"]
+
+=====================================================================
+PASSO 6 - Fazer login na CONTA 1 
+=====================================================================
+ E-mail
+  //div[@class="card__login"]//input[@name="email"]
+
+ Senha
+  //div[@class="card__login"]//input[@name="password"]
+
+ Botao Acessar
+  //div[@class="card__login"]//button[text()="Acessar"]
+
+Extras 
+ Mostrar/ocultar senha
+  //div[@class="card__login"]//button[@class="login__eye"]
+ Erro do e-mail
+  //div[@class="card__login"]//input[@name="email"]/following-sibling::p
+ Erro da senha
+  //div[@class="card__login"]//input[@name="password"]/following-sibling::p
+
+
+=====================================================================
+PASSO 7 - Home (apos login)
+=====================================================================
+ Nome do usuario  (VALIDAR que o login deu certo)
+  //p[@id="textName"]
+ 
+
+ Numero da conta  
+  //p[@id="textAccountNumber"]/span
+  
+
+ Saldo em conta  (CAPTURAR)
+  //p[@id="textBalance"]/span
+  Exemplo real: "R$ 1.000,00"  (conta criada com saldo = R$ 1.000,00)
+
+ Botao TRANSFERENCIA  
+  //a[starts-with(@id,"btn-TRANSFER")]
+   (O starts-with evita problema) 
+
+ Botao EXTRATO
+  //a[@id="btn-EXTRATO"]
+
+ Botao Sair
+  //a[@id="btnExit"]
+
+
+=====================================================================
+PASSO 8 - Transferir qualquer valor para a CONTA 2   
+=====================================================================
+ Entrar na tela: clicar em TRANSFERENCIA (ver Passo 7)
+
+ Texto da tela  (VALIDAR que esta na tela de transferencia)
+  //p[contains(text(),"Realize transferência")]
+
+ Campo numero da conta  (DIGITAR - numero da CONTA 2)
+  //input[@name="accountNumber"]
+
+ Campo digito  (DIGITAR - digito da CONTA 2)
+  //input[@name="digit"]
+
+ Campo valor da transferencia  
+  //input[@name="transferValue"]
+
+ Campo descricao  
+  //input[@name="description"]
+
+ Botao Transferir agora  
+  //button[text()="Transferir agora"]
+
+ Botao Voltar  
+  //a[@id="btnBack"]
+
+ Botao Sair  
+  //a[@id="btnExit"]
+
+
+ Modal de sucesso - texto  (VALIDAR)
+  //p[@id="modalText"]
+  - Validar com contains "realizada com sucesso" (evita problema com
+    a falta de acento em "Transferencia")
+
+ Modal - botao Fechar  
+  //a[@id="btnCloseModal"]
+
+(O modal da transferencia usa os MESMOS ids do modal do cadastro:
+ modalText e btnCloseModal. Reaproveitar o mesmo mapeamento no codigo.)
+
+
+=====================================================================
+PASSO 9 - Validar o saldo no EXTRATO da CONTA 1 (origem)   Tela: extrato
+=====================================================================
+ Entrar na tela: clicar em EXTRATO (ver Passo 7)
+
+ Saldo disponivel
+  //p[@id="textBalanceAvailable"]
+  
+
+Linha de transacao (cada lancamento do extrato tem estes 4 campos):
+ Data       //p[@id="textDateTransaction"]    
+ Tipo       //p[@id="textTypeTransaction"]    
+ Descricao  //p[@id="textDescription"]        
+ Valor      //p[@id="textTransferValue"]      
+     
+
+ Botao Voltar  (CLICAR)   //a[@id="btnBack"]
+ Botao Sair    (CLICAR)   //a[@id="btnExit"]
+
+(Comentário claudinho)
+COMO ACHAR A LINHA DA TRANSFERENCIA (importante)
+Os ids se REPETEM em cada lancamento. Com a transferencia, o extrato
+passa a ter 2 linhas (abertura de conta + transferencia), entao
+//p[@id="textTransferValue"] retorna 2 elementos.
+Solucao: filtrar pela descricao digitada na transferencia (Passo 8):
+
+  Valor da linha da transferencia:
+  //p[@id="textDescription" and text()="DESCRICAO_DIGITADA"]/following-sibling::p[@id="textTransferValue"]
+
+  Tipo da linha da transferencia:
+  //p[@id="textDescription" and text()="DESCRICAO_DIGITADA"]/parent::div/preceding-sibling::div//p[@id="textTypeTransaction"]
+  
+
+=====================================================================
+PASSO 10 - Sair da CONTA 1 e entrar na CONTA 2 (destino)
+=====================================================================
+ Botao Sair (ver Passo 7)
+Depois: repetir PASSO 6 com e-mail e senha da CONTA 2.
+
+
+=====================================================================
+PASSO 11 - Validar o valor recebido no EXTRATO da CONTA 2
+=====================================================================
+ Mesmos elementos do PASSO 9 (a tela e a mesma)
+
+
+=====================================================================
